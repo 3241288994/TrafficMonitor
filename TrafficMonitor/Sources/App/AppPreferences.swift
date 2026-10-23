@@ -28,6 +28,8 @@ enum PreferenceKey {
     static let quotaWarningPercent = "quotaWarningPercent"
     static let quotaAlertsEnabled = "quotaAlertsEnabled"
     static let networkQuotasJSON = "networkQuotasJSON"
+    static let showDockIcon = "showDockIcon"
+    static let showMenuBarIcon = "showMenuBarIcon"
 }
 
 enum NetworkQuotaPreferences {

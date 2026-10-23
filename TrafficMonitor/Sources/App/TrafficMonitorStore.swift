@@ -49,9 +49,22 @@ final class TrafficMonitorStore: ObservableObject {
     @Published private(set) var currentNetworkName = "未知网络"
     @Published private(set) var knownNetworkNames: [String] = []
     @Published private(set) var uploadAnomalies: [UploadAnomaly] = []
+    @Published private(set) var proxyRouting = ProxyRoutingSnapshot.unavailable("尚未读取", socketPath: "")
+    @Published private(set) var isRefreshingProxyRouting = false
+    /// 是否检测到本机 Clash/mihomo 可用；未安装或未运行时用于隐藏「代理分流」入口。
+    @Published private(set) var isClashAvailable = false
+    /// 代理页的历史统计（按范围+聚合）与目标排行。
+    @Published private(set) var proxyHistoryPoints: [ProxyRoutingHistoryPoint] = []
+    @Published private(set) var proxyHistoryTargets: [(target: String, isDirect: Bool, upload: Int64, download: Int64)] = []
+    @Published private(set) var isRefreshingProxyHistory = false
     @Published private(set) var errorMessage: String?
     @Published private(set) var historyErrorMessage: String?
     @Published private(set) var isRefreshingHistory = false
+
+    private let clashRoutingClient = ClashRoutingClient()
+    private var proxyRoutingTask: Task<Void, Never>?
+    /// 上一次各连接的累计字节，用于计算增量。
+    private var lastConnectionBytes: [String: (up: Int64, down: Int64)] = [:]
 
     private let collector: TrafficCollector
     private let database: TrafficDatabase?
@@ -91,6 +104,7 @@ final class TrafficMonitorStore: ObservableObject {
             }
             isStarted = true
             qualityMonitor.start()
+            startProxyRoutingPolling()
             Task { await refreshHistory() }
         } catch {
             errorMessage = error.localizedDescription
@@ -101,7 +115,92 @@ final class TrafficMonitorStore: ObservableObject {
         guard isStarted else { return }
         collector.stop()
         qualityMonitor.stop()
+        proxyRoutingTask?.cancel()
+        proxyRoutingTask = nil
         isStarted = false
+    }
+
+    /// 每 10 秒从 Clash 读取一次连接分流快照。
+    private func startProxyRoutingPolling() {
+        proxyRoutingTask?.cancel()
+        proxyRoutingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.refreshProxyRouting()
+                try? await Task.sleep(for: .seconds(10))
+            }
+        }
+    }
+
+    func refreshProxyRouting() async {
+        isRefreshingProxyRouting = true
+        defer { isRefreshingProxyRouting = false }
+        let client = clashRoutingClient
+        let result = await Task.detached(priority: .utility) { () -> (ProxyRoutingSnapshot, [ClashRoutingClient.RawConnection]?) in
+            (client.fetchSnapshot(), client.fetchRawConnections())
+        }.value
+        let (snapshot, rawConnections) = result
+        proxyRouting = snapshot
+        isClashAvailable = snapshot.isAvailable
+
+        // 记录增量到历史库。
+        if let rawConnections, let database {
+            let records = Self.incrementRecords(from: rawConnections, previous: lastConnectionBytes)
+            lastConnectionBytes = Dictionary(
+                uniqueKeysWithValues: rawConnections.map { ($0.id, ($0.upload, $0.download)) }
+            )
+            if !records.isEmpty {
+                let now = Date()
+                try? await database.recordProxyRouting(records, at: now)
+            }
+        } else {
+            lastConnectionBytes.removeAll()
+        }
+    }
+
+    /// 用当前连接累计字节减去上次快照，得到本区间增量，按目标+是否直连聚合。
+    private static func incrementRecords(
+        from connections: [ClashRoutingClient.RawConnection],
+        previous: [String: (up: Int64, down: Int64)]
+    ) -> [ProxyRoutingRecord] {
+        var aggregated: [String: ProxyRoutingRecord] = [:]
+        for conn in connections {
+            let prev = previous[conn.id] ?? (0, 0)
+            let upDelta = max(0, conn.upload - prev.up)
+            let downDelta = max(0, conn.download - prev.down)
+            guard upDelta > 0 || downDelta > 0 else { continue }
+            let key = "\(conn.target)|\(conn.isDirect)"
+            if let existing = aggregated[key] {
+                aggregated[key] = ProxyRoutingRecord(
+                    target: conn.target,
+                    isDirect: conn.isDirect,
+                    uploadBytes: existing.uploadBytes + upDelta,
+                    downloadBytes: existing.downloadBytes + downDelta
+                )
+            } else {
+                aggregated[key] = ProxyRoutingRecord(
+                    target: conn.target,
+                    isDirect: conn.isDirect,
+                    uploadBytes: upDelta,
+                    downloadBytes: downDelta
+                )
+            }
+        }
+        return Array(aggregated.values)
+    }
+
+    /// 加载代理页历史统计（按范围 + 聚合）。
+    func loadProxyHistory(from start: Date, to end: Date, aggregation: TrafficAggregation) async {
+        guard let database else { return }
+        isRefreshingProxyHistory = true
+        defer { isRefreshingProxyHistory = false }
+        do {
+            async let points = database.proxyRoutingHistory(from: start, to: end, aggregation: aggregation)
+            async let targets = database.proxyRoutingTargets(from: start, to: end)
+            proxyHistoryPoints = try await points
+            proxyHistoryTargets = try await targets
+        } catch {
+            historyErrorMessage = error.localizedDescription
+        }
     }
 
     func refreshHistory() async {

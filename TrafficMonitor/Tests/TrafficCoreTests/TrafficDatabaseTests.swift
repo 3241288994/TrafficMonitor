@@ -167,6 +167,44 @@ struct TrafficDatabaseTests {
         let gatewayApps = try await fixture.database.topApps(from: start, to: end, accountingMode: .gateway)
         #expect(gatewayApps.map(\.appName) == ["Clash Verge"])
     }
+
+    @Test func uploadAnomaliesRequireBaselineOrLargeSpike() async throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let fixture = try DatabaseFixture(calendar: calendar)
+        defer { fixture.remove() }
+
+        let mb = Int64(1_024 * 1_024)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 6, day: 15, hour: 12))!
+        let todayStart = calendar.startOfDay(for: now)
+
+        // 今日"微小"上传：仅 20 MB，且历史无基线 —— 不应被判为异常。
+        try await fixture.database.record(
+            TrafficSnapshot(timestamp: todayStart.addingTimeInterval(3600), processes: [
+                ProcessTraffic(pid: 10, processName: "TinySync", receivedBytes: 0, sentBytes: 20 * mb, sampleDuration: 2)
+            ])
+        )
+
+        // 有历史基线的应用：过去几天日均约 10 MB，今日上传 100 MB（10 倍）—— 应判为异常。
+        for dayOffset in 1...3 {
+            let day = calendar.date(byAdding: .day, value: -dayOffset, to: todayStart)!
+            try await fixture.database.record(
+                TrafficSnapshot(timestamp: day.addingTimeInterval(3600), processes: [
+                    ProcessTraffic(pid: 11, processName: "Backup", receivedBytes: 0, sentBytes: 10 * mb, sampleDuration: 2)
+                ])
+            )
+        }
+        try await fixture.database.record(
+            TrafficSnapshot(timestamp: todayStart.addingTimeInterval(7200), processes: [
+                ProcessTraffic(pid: 11, processName: "Backup", receivedBytes: 0, sentBytes: 100 * mb, sampleDuration: 2)
+            ])
+        )
+
+        let anomalies = try await fixture.database.uploadAnomalies(now: todayStart.addingTimeInterval(8000))
+        let names = Set(anomalies.map(\.appName))
+        #expect(names.contains("Backup"))
+        #expect(!names.contains("TinySync"))
+    }
 }
 
 private final class DatabaseFixture: @unchecked Sendable {

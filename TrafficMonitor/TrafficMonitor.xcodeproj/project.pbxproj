@@ -7,10 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		00F934C2886ACFEA8558B107 /* ClashRoutingClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2FCF82C2806D8747F36680B /* ClashRoutingClient.swift */; };
 		14E5402228C3D69CB05818AE /* TrafficPopoverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7469AEA32E6E8D1B3AA8BFBB /* TrafficPopoverView.swift */; };
 		36684306B588A5380CAD28C7 /* NetworkProfileDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCE10C57056511330B59EB1 /* NetworkProfileDetector.swift */; };
 		382ACE1F59316774A4D3E5E6 /* NetworkQualityDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42F30955453568A94D645160 /* NetworkQualityDashboard.swift */; };
 		382C418CC208BDC18B537C84 /* TrafficCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7AAFDC49A07751F13A61B677 /* TrafficCore.framework */; };
+		3907A40FC688E854C63C77BE /* ProxyRoutingDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AC0975595962C3D8E7A3AF4 /* ProxyRoutingDashboard.swift */; };
 		3990C491E7AA3F6917587B17 /* TrafficHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47C00A195D111D5F941D58D /* TrafficHistory.swift */; };
 		3AD33CFA2B86D5C4318DA563 /* TrafficCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 7AAFDC49A07751F13A61B677 /* TrafficCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		4229F59446C5C1487B936BFB /* ProcessTrafficAttributor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE58C77F79E2085A6CD094D0 /* ProcessTrafficAttributor.swift */; };
@@ -36,6 +38,7 @@
 		EC7ADE2DED470AC7F95BE2D0 /* MenuBarStatusController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA8DE181C8668E0D55E1F5C3 /* MenuBarStatusController.swift */; };
 		FB3DB258A5DF102AF79DC6FD /* NettopFrameParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE024EBA17EDA587752F05E3 /* NettopFrameParser.swift */; };
 		FED4D9827B6E52E0DB01B2D5 /* TrafficMonitorApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90F090AD06C6CCC79115E238 /* TrafficMonitorApp.swift */; };
+		FFC78406950673C789E1D022 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4F94664854D29E6ABDB5B334 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -89,16 +92,19 @@
 		3CCE10C57056511330B59EB1 /* NetworkProfileDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProfileDetector.swift; sourceTree = "<group>"; };
 		42F30955453568A94D645160 /* NetworkQualityDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkQualityDashboard.swift; sourceTree = "<group>"; };
 		491F2F21F70D8F90BF6A0926 /* QuotaNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotaNotifications.swift; sourceTree = "<group>"; };
+		4F94664854D29E6ABDB5B334 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		51DD7223F1CA0B2B4FA8E5AB /* libsqlite3.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libsqlite3.tbd; path = usr/lib/libsqlite3.tbd; sourceTree = SDKROOT; };
 		559591571A216AD958BB9BEE /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		6ADDDDEEF31FB2ABA89B742D /* NettopFrameParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NettopFrameParserTests.swift; sourceTree = "<group>"; };
 		7469AEA32E6E8D1B3AA8BFBB /* TrafficPopoverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficPopoverView.swift; sourceTree = "<group>"; };
 		79B2A6A0FFA9D0C15046557E /* ByteRateFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ByteRateFormatter.swift; sourceTree = "<group>"; };
 		7AAFDC49A07751F13A61B677 /* TrafficCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = TrafficCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		7AC0975595962C3D8E7A3AF4 /* ProxyRoutingDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProxyRoutingDashboard.swift; sourceTree = "<group>"; };
 		7C4285BA4145DC2DCF0EE0F8 /* AppIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIconView.swift; sourceTree = "<group>"; };
 		85579CC0BEB2CAC8A0E33759 /* ChartTooltip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartTooltip.swift; sourceTree = "<group>"; };
 		90F090AD06C6CCC79115E238 /* TrafficMonitorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficMonitorApp.swift; sourceTree = "<group>"; };
 		9979647FE0C61CA72A7667E9 /* TrafficCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrafficCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A2FCF82C2806D8747F36680B /* ClashRoutingClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClashRoutingClient.swift; sourceTree = "<group>"; };
 		AB2050065A2EF1BF0450F3BD /* TrafficMonitorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficMonitorStore.swift; sourceTree = "<group>"; };
 		B47C00A195D111D5F941D58D /* TrafficHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrafficHistory.swift; sourceTree = "<group>"; };
 		CA8DE181C8668E0D55E1F5C3 /* MenuBarStatusController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarStatusController.swift; sourceTree = "<group>"; };
@@ -196,13 +202,16 @@
 			children = (
 				7C4285BA4145DC2DCF0EE0F8 /* AppIconView.swift */,
 				19E042F421FFCEEF810D437F /* AppPreferences.swift */,
+				4F94664854D29E6ABDB5B334 /* Assets.xcassets */,
 				85579CC0BEB2CAC8A0E33759 /* ChartTooltip.swift */,
+				A2FCF82C2806D8747F36680B /* ClashRoutingClient.swift */,
 				559591571A216AD958BB9BEE /* DashboardView.swift */,
 				29F282C0F9F0E1F8BE87F1E8 /* HistoryDashboard.swift */,
 				CA8DE181C8668E0D55E1F5C3 /* MenuBarStatusController.swift */,
 				3CCE10C57056511330B59EB1 /* NetworkProfileDetector.swift */,
 				42F30955453568A94D645160 /* NetworkQualityDashboard.swift */,
 				D8D3E13527F98BC2FE95686F /* NetworkQualityMonitor.swift */,
+				7AC0975595962C3D8E7A3AF4 /* ProxyRoutingDashboard.swift */,
 				491F2F21F70D8F90BF6A0926 /* QuotaNotifications.swift */,
 				90F090AD06C6CCC79115E238 /* TrafficMonitorApp.swift */,
 				AB2050065A2EF1BF0450F3BD /* TrafficMonitorStore.swift */,
@@ -275,6 +284,7 @@
 			buildConfigurationList = 154D38E408B1543D28B641CE /* Build configuration list for PBXNativeTarget "TrafficMonitor" */;
 			buildPhases = (
 				E366A47FD3ECE051642B2CE3 /* Sources */,
+				1E899657CEBE49195F64CF7A /* Resources */,
 				9AF5DCF89B06D94E43C8C2E0 /* Frameworks */,
 				397205DDEC77FD91DE605E16 /* Embed Frameworks */,
 			);
@@ -325,6 +335,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		1E899657CEBE49195F64CF7A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FFC78406950673C789E1D022 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		026CFEF8637D478882887F59 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -358,12 +379,14 @@
 				49948F58783AF1DD23CB8B12 /* AppIconView.swift in Sources */,
 				76DE30BECA5C00855BE68079 /* AppPreferences.swift in Sources */,
 				E1E68B1616EB1B89C1420B05 /* ChartTooltip.swift in Sources */,
+				00F934C2886ACFEA8558B107 /* ClashRoutingClient.swift in Sources */,
 				DF54B1E9EA537237BC286D5F /* DashboardView.swift in Sources */,
 				E65995E38919966B05657515 /* HistoryDashboard.swift in Sources */,
 				EC7ADE2DED470AC7F95BE2D0 /* MenuBarStatusController.swift in Sources */,
 				36684306B588A5380CAD28C7 /* NetworkProfileDetector.swift in Sources */,
 				382ACE1F59316774A4D3E5E6 /* NetworkQualityDashboard.swift in Sources */,
 				CEBE0C017FF96A58CE5B5BAB /* NetworkQualityMonitor.swift in Sources */,
+				3907A40FC688E854C63C77BE /* ProxyRoutingDashboard.swift in Sources */,
 				D3670C75F3F1FF259692FD93 /* QuotaNotifications.swift in Sources */,
 				FED4D9827B6E52E0DB01B2D5 /* TrafficMonitorApp.swift in Sources */,
 				8F04B7813B748674DCE5A889 /* TrafficMonitorStore.swift in Sources */,

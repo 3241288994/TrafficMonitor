@@ -150,3 +150,34 @@ public enum TrafficByteFormatter {
         return formatter.string(fromByteCount: max(0, bytes))
     }
 }
+
+/// 代理分流按时间的聚合点（供「代理」页的范围统计使用）。
+public struct ProxyRoutingHistoryPoint: Identifiable, Equatable, Sendable {
+    public let start: Date
+    public let uploadBytes: Int64
+    public let downloadBytes: Int64
+
+    public var id: Date { start }
+    public var totalBytes: Int64 { uploadBytes + downloadBytes }
+
+    public init(start: Date, uploadBytes: Int64, downloadBytes: Int64) {
+        self.start = start
+        self.uploadBytes = uploadBytes
+        self.downloadBytes = downloadBytes
+    }
+}
+
+/// 代理分流的历史记录条目（写入用）。
+public struct ProxyRoutingRecord: Sendable, Equatable {
+    public let target: String
+    public let isDirect: Bool
+    public let uploadBytes: Int64
+    public let downloadBytes: Int64
+
+    public init(target: String, isDirect: Bool, uploadBytes: Int64, downloadBytes: Int64) {
+        self.target = target
+        self.isDirect = isDirect
+        self.uploadBytes = uploadBytes
+        self.downloadBytes = downloadBytes
+    }
+}

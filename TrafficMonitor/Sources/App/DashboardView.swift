@@ -6,6 +6,7 @@ enum DashboardSection: String, CaseIterable, Identifiable {
     case overview
     case history
     case apps
+    case routing
     case network
     case settings
 
@@ -16,6 +17,7 @@ enum DashboardSection: String, CaseIterable, Identifiable {
         case .overview: "概览"
         case .history: "历史"
         case .apps: "应用"
+        case .routing: "代理"
         case .network: "网络"
         case .settings: "设置"
         }
@@ -26,6 +28,7 @@ enum DashboardSection: String, CaseIterable, Identifiable {
         case .overview: "chart.xyaxis.line"
         case .history: "calendar"
         case .apps: "square.grid.2x2"
+        case .routing: "arrow.triangle.branch"
         case .network: "network"
         case .settings: "gearshape"
         }
@@ -34,13 +37,28 @@ enum DashboardSection: String, CaseIterable, Identifiable {
 
 struct DashboardView: View {
     @ObservedObject var store: TrafficMonitorStore
+    var statusBarController: MenuBarStatusController?
     @State private var selection: DashboardSection? = .overview
+
+    /// 未检测到本机 Clash/mihomo 时隐藏「代理分流」入口。
+    private var visibleSections: [DashboardSection] {
+        DashboardSection.allCases.filter { section in
+            section != .routing || store.isClashAvailable
+        }
+    }
 
     var body: some View {
         NavigationSplitView {
-            List(DashboardSection.allCases, selection: $selection) { section in
-                Label(section.title, systemImage: section.icon)
-                    .tag(section)
+            List(visibleSections, selection: $selection) { section in
+                Label {
+                    Text(section.title)
+                } icon: {
+                    Image(systemName: section.icon)
+                        .imageScale(.medium)
+                }
+                .labelStyle(.titleAndIcon)
+                .frame(maxHeight: .infinity, alignment: .center)
+                .tag(section)
             }
             .listStyle(.sidebar)
             .navigationTitle("流量监控")
@@ -56,49 +74,63 @@ struct DashboardView: View {
                     NetworkQualityDashboard(monitor: store.qualityMonitor)
                 case .apps:
                     AppsDashboard(store: store)
+                case .routing:
+                    ProxyRoutingDashboard(store: store)
                 case .settings:
-                    SettingsDashboard(store: store)
+                    SettingsDashboard(store: store, menuBarController: statusBarController)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .toolbar {
                 ToolbarItemGroup(placement: .primaryAction) {
-                    Picker(
-                        "统计口径",
-                        selection: Binding(
-                            get: { store.accountingMode },
-                            set: { store.setAccountingMode($0) }
-                        )
-                    ) {
-                        ForEach(TrafficAccountingMode.allCases, id: \.rawValue) { mode in
-                            Text(mode.title).tag(mode)
+                    HStack(spacing: 16) {
+                        Picker(
+                            "统计口径",
+                            selection: Binding(
+                                get: { store.accountingMode },
+                                set: { store.setAccountingMode($0) }
+                            )
+                        ) {
+                            ForEach(TrafficAccountingMode.allCases, id: \.rawValue) { mode in
+                                Text(mode.title).tag(mode)
+                            }
                         }
-                    }
-                    .labelsHidden()
-                    .frame(width: 120)
+                        .pickerStyle(.menu)
+                        .labelsHidden()
+                        .frame(minWidth: 120)
+                        .help("统计口径")
 
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(store.errorMessage == nil ? Color.green : Color.red)
-                            .frame(width: 7, height: 7)
-                        Text(store.errorMessage == nil ? "正在监控" : "采集异常")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Button {
-                        Task { await store.refreshHistory() }
-                    } label: {
-                        if store.isRefreshingHistory {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Image(systemName: "arrow.clockwise")
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(store.errorMessage == nil ? Color.green : Color.red)
+                                .frame(width: 7, height: 7)
+                            Text(store.errorMessage == nil ? "正在监控" : "采集异常")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize()
                         }
+
+                        Button {
+                            Task { await store.refreshHistory() }
+                        } label: {
+                            if store.isRefreshingHistory {
+                                ProgressView().controlSize(.small)
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                            }
+                        }
+                        .help("刷新历史统计")
                     }
-                    .help("刷新历史统计")
+                    .padding(.trailing, 8)
                 }
             }
         }
         .navigationSplitViewStyle(.balanced)
+        .onChange(of: store.isClashAvailable) { _, available in
+            if !available, selection == .routing {
+                selection = .overview
+            }
+        }
     }
 }
 
@@ -193,7 +225,7 @@ private struct MetricCard: View {
 
     var body: some View {
         DashboardCard {
-            HStack(alignment: .top, spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(tint)
@@ -810,6 +842,7 @@ private struct AppUsageRow: View {
 
 private struct SettingsDashboard: View {
     @ObservedObject var store: TrafficMonitorStore
+    var menuBarController: MenuBarStatusController?
     @State private var showResetConfirmation = false
     @AppStorage(PreferenceKey.menuBarDisplayMode) private var menuBarMode = MenuBarDisplayMode.liveRate.rawValue
     @AppStorage(PreferenceKey.dailyQuotaBytes) private var dailyQuotaGB = 0.0
@@ -818,6 +851,8 @@ private struct SettingsDashboard: View {
     @AppStorage(PreferenceKey.billingDay) private var billingDay = 1
     @AppStorage(PreferenceKey.quotaWarningPercent) private var warningPercent = 80.0
     @AppStorage(PreferenceKey.quotaAlertsEnabled) private var quotaAlertsEnabled = false
+    @AppStorage(PreferenceKey.showDockIcon) private var showInDock = true
+    @AppStorage(PreferenceKey.showMenuBarIcon) private var showMenuBarIcon = true
     @State private var currentNetworkQuotaGB = 0.0
     private let bytesPerGB = 1_073_741_824.0
 
@@ -846,32 +881,33 @@ private struct SettingsDashboard: View {
                         Text(mode.title).tag(mode.rawValue)
                     }
                 }
-                Text("实时模式以两行分别显示下载和上传；也可以显示今日、本月或配额剩余。")
+                .pickerStyle(.menu)
+
+                Toggle("在 Dock 中显示图标", isOn: $showInDock)
+                    .onChange(of: showInDock) { _, _ in
+                        TrafficMonitorAppDelegate.applyDockIconPreference()
+                    }
+
+                Toggle("显示菜单栏图标", isOn: $showMenuBarIcon)
+                    .onChange(of: showMenuBarIcon) { _, visible in
+                        menuBarController?.setMenuBarVisible(visible)
+                    }
+                Text("实时模式以两行分别显示下载和上传；也可以显示今日、本月或配额剩余。关闭后统计仍会在后台运行，可通过 Dock 或此窗口查看。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section("流量配额") {
-                LabeledContent("每日") {
-                    TextField("不限制", value: $dailyQuotaGB, format: .number.precision(.fractionLength(0...2)))
-                        .frame(width: 90)
-                    Text("GB")
-                }
-                LabeledContent("每周") {
-                    TextField("不限制", value: $weeklyQuotaGB, format: .number.precision(.fractionLength(0...2)))
-                        .frame(width: 90)
-                    Text("GB")
-                }
-                LabeledContent("账单周期") {
-                    TextField("不限制", value: $monthlyQuotaGB, format: .number.precision(.fractionLength(0...2)))
-                        .frame(width: 90)
-                    Text("GB")
-                }
+                quotaRow("每日", value: $dailyQuotaGB)
+                quotaRow("每周", value: $weeklyQuotaGB)
+                quotaRow("账单周期", value: $monthlyQuotaGB)
                 Stepper("每月 \(billingDay) 日重置", value: $billingDay, in: 1...28)
-                HStack {
+                HStack(spacing: 12) {
                     Text("达到阈值")
                     Slider(value: $warningPercent, in: 50...100, step: 5)
-                    Text("\(Int(warningPercent))%").frame(width: 42)
+                    Text("\(Int(warningPercent))%")
+                        .monospacedDigit()
+                        .frame(minWidth: 42, alignment: .trailing)
                 }
                 Toggle("达到配额阈值时发送通知", isOn: $quotaAlertsEnabled)
                     .onChange(of: quotaAlertsEnabled) { _, enabled in
@@ -880,15 +916,21 @@ private struct SettingsDashboard: View {
                 Text("填 0 表示不限制。当前账单周期已使用 \(TrafficByteFormatter.string(fromByteCount: store.billingCycleTotals.totalBytes))。")
                     .font(.caption).foregroundStyle(.secondary)
                 LabeledContent("\(store.currentNetworkName) 配额") {
-                    TextField("不限制", value: $currentNetworkQuotaGB, format: .number.precision(.fractionLength(0...2)))
-                        .frame(width: 90)
-                    Text("GB")
-                    Button("保存") {
-                        NetworkQuotaPreferences.setQuota(
-                            Int64(max(0, currentNetworkQuotaGB) * bytesPerGB),
-                            for: store.currentNetworkName
-                        )
+                    HStack(spacing: 8) {
+                        TextField("不限制", value: $currentNetworkQuotaGB, format: .number.precision(.fractionLength(0...2)))
+                            .textFieldStyle(.roundedBorder)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 90)
+                        Text("GB")
+                            .foregroundStyle(.secondary)
+                        Button("保存") {
+                            NetworkQuotaPreferences.setQuota(
+                                Int64(max(0, currentNetworkQuotaGB) * bytesPerGB),
+                                for: store.currentNetworkName
+                            )
+                        }
                     }
+                    .padding(.trailing, 4)
                 }
             }
 
@@ -953,6 +995,20 @@ private struct SettingsDashboard: View {
 
     private var applicationVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+    }
+
+    private func quotaRow(_ title: String, value: Binding<Double>) -> some View {
+        LabeledContent(title) {
+            HStack(spacing: 8) {
+                TextField("不限制", value: value, format: .number.precision(.fractionLength(0...2)))
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 90)
+                Text("GB")
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.trailing, 4)
+        }
     }
 }
 

@@ -98,10 +98,12 @@ struct HistoryDashboard: View {
             Picker("格式", selection: $exportFormat) {
                 ForEach(TrafficExportFormat.allCases) { Text($0.title).tag($0) }
             }
-            .frame(width: 90)
+            .pickerStyle(.menu)
+            .frame(minWidth: 90)
             Button("导出", systemImage: "square.and.arrow.up") {
                 Task { await export() }
             }
+            .fixedSize()
         }
     }
 
@@ -129,7 +131,8 @@ struct HistoryDashboard: View {
                         Text("每天").tag(TrafficAggregation.day)
                         Text("每月").tag(TrafficAggregation.month)
                     }
-                    .frame(width: 130)
+                    .pickerStyle(.menu)
+                    .frame(minWidth: 120)
                 }
             }
         }

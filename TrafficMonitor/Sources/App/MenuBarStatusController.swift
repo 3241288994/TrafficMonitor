@@ -7,20 +7,38 @@ import TrafficCore
 final class MenuBarStatusController: NSObject {
     var openDashboard: (() -> Void)?
 
-    private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+    private var statusItem: NSStatusItem?
     private let popover = NSPopover()
-    private let rateView = MenuBarRateView(frame: NSRect(x: 0, y: 0, width: 92, height: 22))
+    private var rateView = MenuBarRateView(frame: NSRect(x: 0, y: 0, width: 92, height: 22))
     private var snapshotObservation: AnyCancellable?
     private var totalsObservation: AnyCancellable?
     private var billingObservation: AnyCancellable?
     private var defaultsObservation: NSObjectProtocol?
     private weak var store: TrafficMonitorStore?
+    private var isVisible = true
 
-    func install(store: TrafficMonitorStore) {
-        guard self.store == nil else { return }
-        self.store = store
+    /// 当前菜单栏图标是否显示（供外部判断是否需要切换）。
+    var isMenuBarVisible: Bool { isVisible }
 
-        if let button = statusItem.button {
+    /// 是否显示菜单栏图标。隐藏后统计照常运行，可通过 Dock/主窗口继续使用。
+    func setMenuBarVisible(_ visible: Bool) {
+        guard isVisible != visible else { return }
+        isVisible = visible
+        if visible {
+            createStatusItem()
+            if let store { update(with: store.snapshot) }
+        } else {
+            destroyStatusItem()
+        }
+    }
+
+    private func createStatusItem() {
+        guard statusItem == nil else { return }
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = item
+        rateView.removeFromSuperview()
+
+        if let button = item.button {
             button.title = ""
             button.image = nil
             button.target = self
@@ -37,6 +55,20 @@ final class MenuBarStatusController: NSObject {
                 rateView.bottomAnchor.constraint(equalTo: button.bottomAnchor)
             ])
         }
+    }
+
+    private func destroyStatusItem() {
+        popover.performClose(nil)
+        if let statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+        }
+        statusItem = nil
+        rateView.removeFromSuperview()
+    }
+
+    func install(store: TrafficMonitorStore) {
+        guard self.store == nil else { return }
+        self.store = store
 
         popover.behavior = .transient
         popover.animates = true
@@ -69,7 +101,13 @@ final class MenuBarStatusController: NSObject {
                 self.update(with: store.snapshot)
             }
         }
-        update(with: store.snapshot)
+
+        let visible = UserDefaults.standard.object(forKey: PreferenceKey.showMenuBarIcon) as? Bool ?? true
+        isVisible = visible
+        if visible {
+            createStatusItem()
+            update(with: store.snapshot)
+        }
     }
 
     func remove() {
@@ -80,8 +118,7 @@ final class MenuBarStatusController: NSObject {
             NotificationCenter.default.removeObserver(defaultsObservation)
         }
         defaultsObservation = nil
-        popover.performClose(nil)
-        NSStatusBar.system.removeStatusItem(statusItem)
+        destroyStatusItem()
         store = nil
     }
 
@@ -103,15 +140,15 @@ final class MenuBarStatusController: NSObject {
                     * 1_073_741_824
             )
         )
-        statusItem.length = min(max(preferredWidth, 54), 108)
-        statusItem.button?.setAccessibilityLabel(
+        statusItem?.length = min(max(preferredWidth, 54), 108)
+        statusItem?.button?.setAccessibilityLabel(
             "下载 \(ByteRateFormatter.string(from: received))，"
                 + "上传 \(ByteRateFormatter.string(from: sent))"
         )
     }
 
     @objc private func togglePopover() {
-        guard let button = statusItem.button else { return }
+        guard let button = statusItem?.button else { return }
         if popover.isShown {
             popover.performClose(nil)
         } else {

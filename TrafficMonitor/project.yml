@@ -43,6 +43,7 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: 流量监控
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
         INFOPLIST_KEY_LSUIElement: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_NSLocationUsageDescription: TrafficMonitor 仅在本机读取 Wi-Fi 名称，以便按网络统计流量和配额。
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: TrafficMonitor 仅在本机读取 Wi-Fi 名称，以便按网络统计流量和配额。
         CODE_SIGN_STYLE: Automatic
